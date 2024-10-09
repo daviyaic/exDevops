@@ -1,5 +1,5 @@
-# Simple workflow for deploying static content to GitHub Pages
-name: Deploy static content to Pages
+# Simple workflow for deploying static content to GitHub Pages and AWS EC2
+name: Deploy static content to GitHub Pages and AWS
 
 on:
   # Runs on pushes targeting the default branch
@@ -9,22 +9,35 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
   contents: read
   pages: write
   id-token: write
 
 jobs:
-  # Single deploy job since we're just deploying
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Conectando AWS
+
+      # Step to deploy to GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: actions/configure-pages@v2
+      - name: Upload to GitHub Pages
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: ./path-to-your-static-site # Adjust path if needed
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v2
+
+      # Step to connect to AWS EC2 and pull the latest changes
+      - name: Connect to AWS EC2 and pull updates
         run: |
-            echo: "${{secrets.KEY_H}}" > private_key && chmode 600 private_key
-            ssh -o StrictHostKey=no -i private_key ubuntu@ec2-18-209-95-121.compute-1.amazonaws.com  "
-              cd /var/www/html/exDevops &&
-              sudo git pull
+          echo "${{secrets.KEY_H}}" > private_key && chmod 600 private_key
+          ssh -o StrictHostKeyChecking=no -i private_key ubuntu@ec2-18-209-95-121.compute-1.amazonaws.com "
+            cd /var/www/html/exDevops &&
+            sudo git pull"
+        env:
+          KEY_H: ${{ secrets.KEY_H }}
